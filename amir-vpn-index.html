@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Amir VPN Panel</title>
+<style>
+body{margin:0;background:#f3f5f7;font-family:Tahoma,Arial,sans-serif;color:#17202a}
+.wrap{max-width:1000px;margin:auto;padding:18px}.card{background:white;border-radius:16px;padding:18px;margin:12px 0;box-shadow:0 4px 18px #0001}
+h1{margin:0 0 5px}.muted{color:#6b7280;font-size:13px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.stat{background:#f8fafc;padding:16px;border-radius:14px}.stat b{display:block;font-size:25px;margin-top:5px}
+.row{display:flex;gap:10px;flex-wrap:wrap}input,select,button{font:inherit;padding:11px;border-radius:10px;border:1px solid #d7dce2}input{flex:1;min-width:220px}button{background:#111827;color:white;cursor:pointer}
+table{width:100%;border-collapse:collapse;margin-top:14px}th,td{padding:10px;border-bottom:1px solid #eee;text-align:right}
+.badge{padding:5px 9px;border-radius:99px;font-size:12px}.pending{background:#fff3cd;color:#8a6200}.paid{background:#d1fae5;color:#047857}
+@media(max-width:700px){.grid{grid-template-columns:1fr}th,td{font-size:12px;padding:8px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="card"><h1>📋 پنل مدیریت Amir VPN</h1><div class="muted">مدیریت مشتری‌ها و وضعیت پرداخت</div></div>
+<div class="grid">
+<div class="stat">👥 مشتری‌ها<b id="count">0</b></div>
+<div class="stat">🟡 منتظر پرداخت<b id="pending">0</b></div>
+<div class="stat">🟢 پرداخت‌شده<b id="paid">0</b></div>
+</div>
+<div class="card">
+<div class="row">
+<input id="search" placeholder="🔎 جستجوی نام یا شماره">
+<select id="filter"><option value="all">همه</option><option value="pending">منتظر پرداخت</option><option value="paid">پرداخت شد</option></select>
+<button onclick="loadCustomers()">🔄 بروزرسانی</button>
+</div>
+<div id="msg" class="muted" style="margin-top:10px"></div>
+<div style="overflow:auto"><table><thead><tr><th>مشتری</th><th>شماره</th><th>وضعیت</th><th>تاریخ</th></tr></thead><tbody id="list"><tr><td colspan="4">در حال بارگذاری...</td></tr></tbody></table></div>
+</div>
+</div>
+<script>
+let customers=[];
+async function loadCustomers(){try{let r=await fetch('/api/customers');if(!r.ok)throw 0;let d=await r.json();customers=Array.isArray(d)?d:(d.customers||[]);document.getElementById('msg').textContent='اطلاعات دریافت شد ✅';}catch(e){customers=[];document.getElementById('msg').textContent='اتصال به سرور برقرار نیست.'}render()}
+function render(){let q=document.getElementById('search').value.trim().toLowerCase(),f=document.getElementById('filter').value;
+let rows=customers.filter(c=>{let n=String(c.name||c.firstName||c.username||'').toLowerCase(),p=String(c.phone||c.phoneNumber||'').toLowerCase(),s=c.status||'pending';return(!q||n.includes(q)||p.includes(q))&&(f==='all'||s===f)});
+count.textContent=customers.length;pending.textContent=customers.filter(c=>(c.status||'pending')==='pending').length;paid.textContent=customers.filter(c=>c.status==='paid').length;
+list.innerHTML=rows.length?rows.map(c=>{let s=c.status||'pending';return '<tr><td>'+esc(c.name||c.firstName||c.username||'-')+'</td><td>'+esc(c.phone||c.phoneNumber||'-')+'</td><td><span class="badge '+(s==='paid'?'paid':'pending')+'">'+(s==='paid'?'پرداخت شد':'منتظر پرداخت')+'</span></td><td>'+(c.createdAt?new Date(c.createdAt).toLocaleDateString('fa-IR'):'-')+'</td></tr>'}).join(''):'<tr><td colspan="4">موردی پیدا نشد.</td></tr>'}
+function esc(v){return String(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+search.addEventListener('input',render);filter.addEventListener('change',render);loadCustomers();
+</script>
+</body></html>
